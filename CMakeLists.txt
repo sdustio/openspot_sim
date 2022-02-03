@@ -17,26 +17,54 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_ros REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+find_package(gazebo_dev REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
-add_library(sdnova_ctrl src/sdnova_ctrl.cpp)
-target_include_directories(sdnova_ctrl PUBLIC
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
+add_library(quad_drive SHARED
+  src/quad_drive.cpp
+)
+target_include_directories(quad_drive PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(sdnova_ctrl PRIVATE "SDNOVA_SIMULATION_BUILDING_LIBRARY")
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(quad_drive
+  "gazebo_dev"
+  "gazebo_ros"
+  "rclcpp"
+  "tf2"
+  "tf2_ros"
+  "geometry_msgs"
+  "nav_msgs"
+  "sensor_msgs"
+  "tf2_geometry_msgs"
+)
+ament_export_libraries(
+  quad_drive
+)
+ament_export_include_directories(
+  include
+)
+ament_export_targets(
+  export_${PROJECT_NAME}
+)
 
 install(
   DIRECTORY include/
   DESTINATION include
 )
 install(
-  TARGETS sdnova_ctrl
+  TARGETS quad_drive
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -53,15 +81,5 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  sdnova_ctrl
-)
-ament_export_targets(
-  export_${PROJECT_NAME}
-)
 
 ament_package()
