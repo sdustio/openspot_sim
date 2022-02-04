@@ -1,12 +1,11 @@
-#ifndef SDNOVA_SIMULATION__QUAD_DRIVE_HPP_
-#define SDNOVA_SIMULATION__QUAD_DRIVE_HPP_
+#pragma once
 
 #include <gazebo/common/Plugin.hh>
 #include <memory>
 
-namespace sdnova_simulation {
+namespace sdnova {
 
-class QuadDrivePrivate;
+class QuadDriveImpl;
 
 class QuadDrive : public gazebo::ModelPlugin {
  public:
@@ -15,13 +14,10 @@ class QuadDrive : public gazebo::ModelPlugin {
   virtual ~QuadDrive();
 
  protected:
-  void Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf) override;
-  void Reset() override;
+  void Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) override;
 
  private:
-  std::unique_ptr<QuadDrivePrivate> impl_;
+  std::unique_ptr<QuadDriveImpl> impl_;
 };
 
-}  // namespace sdnova_simulation
-
-#endif  // SDNOVA_SIMULATION__QUAD_DRIVE_HPP_
+}  // namespace sdnova

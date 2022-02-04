@@ -31,13 +31,17 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
+find_package(sdquadx REQUIRED)
+
 add_library(quad_drive SHARED
   src/quad_drive.cpp
+  src/itf.cpp
 )
 target_include_directories(quad_drive PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(quad_drive sdquadx::sdquadx)
 ament_target_dependencies(quad_drive
   "gazebo_dev"
   "gazebo_ros"
