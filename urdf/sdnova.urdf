@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<robot name="sdnova" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="base_mass" value="25"/>
+  <xacro:property name="base_length" value="0.58"/>
+  <xacro:property name="base_width" value="0.132"/>
+  <xacro:property name="base_height" value="0.099"/>
+  <xacro:property name="abad_mass" value="2"/>
+  <xacro:property name="abad_radius" value="0.05"/>
+  <xacro:property name="abad_height" value="0.084"/>
+  <xacro:property name="hip_mass" value="1"/>
+  <xacro:property name="hip_length" value="0.284"/>
+  <xacro:property name="hip_width" value="0.03"/>
+  <xacro:property name="knee_mass" value="1"/>
+  <xacro:property name="knee_length" value="0.284"/>
+  <xacro:property name="knee_width" value="0.03"/>
+
+  <!-- lrsign : 1(left), -1(right); fhsign : 1(front), -1(hind) -->
+  <xacro:macro name="leg" params="legid lrsign fhsign">
+  <joint name="joint_${legid}_abad" type="revolute">
+    <parent link="base_link"/>
+    <child link="link_abad_${legid}"/>
+    <axis xyz="1 0 0"/>
+    <xacro:if value="${lrsign==1}">
+    <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${-0.25*pi}"/>
+    <origin xyz="${fhsign*base_length*0.5} ${base_width*0.5} 0" rpy="${0.25*pi} 0 0"/>
+    </xacro:if>
+    <xacro:if value="${lrsign==-1}">
+    <limit effort="300" velocity="10" upper="${0.25*pi}" lower="${-0.75*pi}"/>
+    <origin xyz="${fhsign*base_length*0.5} ${-base_width*0.5} 0" rpy="${-0.25*pi} 0 0"/>
+    </xacro:if>
+  </joint>
+  <link name="link_abad_${legid}">
+    <visual>
+      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
+      <geometry>
+        <cylinder radius="${abad_radius}" length="${abad_height}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
+      <geometry>
+        <cylinder radius="${abad_radius}" length="${abad_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="0 0 0"/>
+      <mass value="${abad_mass}"/>
+      <inertia ixx="0.002426" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.002426"/>
+    </inertial>
+  </link>
+  <joint name="joint_${legid}_hip" type="revolute">
+    <parent link="link_abad_${legid}"/>
+    <child link="link_hip_${legid}"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${0.167*pi}"/>
+    <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.75} 0" rpy="0 ${0.446*pi} 0"/>
+  </joint>
+  <link name="link_hip_${legid}">
+    <visual>
+      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.035 ${hip_width} ${hip_length}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.035 ${hip_width} ${hip_length}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+      <mass value="${hip_mass}"/>
+      <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
+    </inertial>
+  </link>
+  <joint name="joint_${legid}_knee" type="revolute">
+    <parent link="link_hip_${legid}"/>
+    <child link="link_knee_${legid}"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" velocity="10" upper="${-0.167*pi}" lower="${-0.94*pi}"/>
+    <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length}" rpy="0 ${-0.94*pi} 0"/>
+  </joint>
+  <link name="link_knee_${legid}">
+    <visual>
+      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.035 ${knee_width} ${knee_length}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.035 ${knee_width} ${knee_length}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+      <mass value="${knee_mass}"/>
+      <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
+    </inertial>
+  </link>
+  <link name="foot_${legid}">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="foot_joint_${legid}" type="fixed">
+    <parent link="link_knee_${legid}"/>
+    <child link="foot_${legid}"/>
+    <origin xyz="0 0 ${-knee_length}" rpy="0 0 0"/>
+  </joint>
+  </xacro:macro>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${base_mass}"/>
+      <inertia ixx="0.0567188" ixy="0" ixz="0" iyy="0.721252" iyz="0" izz="0.737133"/>
+    </inertial>
+  </link>
+  <link name="link_imu">
+  </link>
+  <joint name="joint_imu" type="fixed">
+    <parent link="base_link"/>
+    <child link="link_imu"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <xacro:leg legid="fr" lrsign="-1" fhsign="1"/>
+  <xacro:leg legid="hr" lrsign="-1" fhsign="-1"/>
+  <xacro:leg legid="fl" lrsign="1" fhsign="1"/>
+  <xacro:leg legid="hl" lrsign="1" fhsign="-1"/>
+
+</robot>

@@ -14,8 +14,8 @@ bool ImuImpl::OnMsg(sensor_msgs::msg::Imu::ConstSharedPtr const &msg) {
 }
 
 LegImpl::LegImpl(gazebo::physics::ModelPtr model) {
-  std::array<std::string, 12> jns = {"fr_abac", "fr_hip", "fr_knee", "hr_abac", "hr_hip", "hr_knee",
-                                     "fl_abac", "fl_hip", "fl_knee", "hl_abac", "hl_hip", "hl_knee"};
+  std::array<std::string, 12> jns = {"joint_fr_abac", "joint_fr_hip", "joint_fr_knee", "joint_hr_abac", "joint_hr_hip", "joint_hr_knee",
+                                     "joint_fl_abac", "joint_fl_hip", "joint_fl_knee", "joint_hl_abac", "joint_hl_hip", "joint_hl_knee"};
   for (size_t i = 0; i < jns.size(); i++) joints_[i] = model->GetJoint(jns[i]);
 }
 
