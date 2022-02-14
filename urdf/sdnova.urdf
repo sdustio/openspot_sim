@@ -16,119 +16,122 @@
 
   <!-- lrsign : 1(left), -1(right); fhsign : 1(front), -1(hind) -->
   <xacro:macro name="leg" params="legid lrsign fhsign">
-  <joint name="joint_${legid}_abad" type="revolute">
-    <parent link="base_link"/>
-    <child link="link_abad_${legid}"/>
-    <axis xyz="1 0 0"/>
-    <xacro:if value="${lrsign==1}">
-    <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${-0.25*pi}"/>
-    <origin xyz="${fhsign*base_length*0.5} ${base_width*0.5} 0" rpy="${0.25*pi} 0 0"/>
-    </xacro:if>
-    <xacro:if value="${lrsign==-1}">
-    <limit effort="300" velocity="10" upper="${0.25*pi}" lower="${-0.75*pi}"/>
-    <origin xyz="${fhsign*base_length*0.5} ${-base_width*0.5} 0" rpy="${-0.25*pi} 0 0"/>
-    </xacro:if>
-  </joint>
-  <link name="link_abad_${legid}">
-    <visual>
-      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
-      <geometry>
-        <cylinder radius="${abad_radius}" length="${abad_height}"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
-      <geometry>
-        <cylinder radius="${abad_radius}" length="${abad_height}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="0 0 0"/>
-      <mass value="${abad_mass}"/>
-      <inertia ixx="0.002426" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.002426"/>
-    </inertial>
-  </link>
-  <joint name="joint_${legid}_hip" type="revolute">
-    <parent link="link_abad_${legid}"/>
-    <child link="link_hip_${legid}"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${0.167*pi}"/>
-    <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.75} 0" rpy="0 ${0.446*pi} 0"/>
-  </joint>
-  <link name="link_hip_${legid}">
-    <visual>
-      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.035 ${hip_width} ${hip_length}"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.035 ${hip_width} ${hip_length}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
-      <mass value="${hip_mass}"/>
-      <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
-    </inertial>
-  </link>
-  <joint name="joint_${legid}_knee" type="revolute">
-    <parent link="link_hip_${legid}"/>
-    <child link="link_knee_${legid}"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="300" velocity="10" upper="${-0.167*pi}" lower="${-0.94*pi}"/>
-    <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length}" rpy="0 ${-0.94*pi} 0"/>
-  </joint>
-  <link name="link_knee_${legid}">
-    <visual>
-      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.035 ${knee_width} ${knee_length}"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.035 ${knee_width} ${knee_length}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
-      <mass value="${knee_mass}"/>
-      <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
-    </inertial>
-  </link>
-  <link name="foot_${legid}">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <sphere radius="0.03"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <sphere radius="0.03"/>
-      </geometry>
-    </collision>
-  </link>
-  <joint name="foot_joint_${legid}" type="fixed">
-    <parent link="link_knee_${legid}"/>
-    <child link="foot_${legid}"/>
-    <origin xyz="0 0 ${-knee_length}" rpy="0 0 0"/>
-  </joint>
+    <joint name="${legid}_abad_joint" type="revolute">
+      <parent link="body_link"/>
+      <child link="${legid}_abad_link"/>
+      <axis xyz="1 0 0"/>
+      <xacro:if value="${lrsign==1}">
+      <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${-0.25*pi}"/>
+      <origin xyz="${fhsign*base_length*0.5} ${base_width*0.5} 0" rpy="0 0 0"/>
+      </xacro:if>
+      <xacro:if value="${lrsign==-1}">
+      <limit effort="300" velocity="10" upper="${0.25*pi}" lower="${-0.75*pi}"/>
+      <origin xyz="${fhsign*base_length*0.5} ${-base_width*0.5} 0" rpy="0 0 0"/>
+      </xacro:if>
+    </joint>
+    <link name="${legid}_abad_link">
+      <visual>
+        <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
+        <geometry>
+          <cylinder radius="${abad_radius}" length="${abad_height}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="${pi*0.5} 0 0"/>
+        <geometry>
+          <cylinder radius="${abad_radius}" length="${abad_height}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.25} 0" rpy="0 0 0"/>
+        <mass value="${abad_mass}"/>
+        <inertia ixx="0.002426" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.002426"/>
+      </inertial>
+    </link>
+    <joint name="${legid}_hip_joint" type="revolute">
+      <parent link="${legid}_abad_link"/>
+      <child link="${legid}_hip_link"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${0.167*pi}"/>
+      <origin xyz="${fhsign*abad_radius} ${lrsign*abad_height*0.75} 0" rpy="0 0 0"/>
+    </joint>
+    <link name="${legid}_hip_link">
+      <visual>
+        <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.035 ${hip_width} ${hip_length}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.035 ${hip_width} ${hip_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length*0.5}" rpy="0 0 0"/>
+        <mass value="${hip_mass}"/>
+        <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
+      </inertial>
+    </link>
+    <joint name="${legid}_knee_joint" type="revolute">
+      <parent link="${legid}_hip_link"/>
+      <child link="${legid}_knee_link"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="300" velocity="10" upper="${-0.167*pi}" lower="${-0.94*pi}"/>
+      <origin xyz="0 ${lrsign*hip_width*0.5} ${-hip_length}" rpy="0 0 0"/>
+    </joint>
+    <link name="${legid}_knee_link">
+      <visual>
+        <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.035 ${knee_width} ${knee_length}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.035 ${knee_width} ${knee_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 ${-knee_length*0.5}" rpy="0 0 0"/>
+        <mass value="${knee_mass}"/>
+        <inertia ixx="0.006796" ixy="0" ixz="0" iyy="0.006823" iyz="0" izz="0.000177"/>
+      </inertial>
+    </link>
+    <link name="${legid}_foot_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.03"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.03"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${legid}_foot_joint" type="fixed">
+      <parent link="${legid}_knee_link"/>
+      <child link="${legid}_foot_link"/>
+      <origin xyz="0 0 ${-knee_length}" rpy="0 0 0"/>
+    </joint>
   </xacro:macro>
 
-  <link name="base_link">
+  <link name="base_link"/>
+  <joint name="base_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="body_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="body_link">
     <visual>
       <geometry>
         <box size="${base_length} ${base_width} ${base_height}"/>
       </geometry>
-      <material name="Cyan">
-        <color rgba="0 1.0 1.0 1.0"/>
-      </material>
     </visual>
     <collision>
       <geometry>
@@ -140,16 +143,185 @@
       <inertia ixx="0.0567188" ixy="0" ixz="0" iyy="0.721252" iyz="0" izz="0.737133"/>
     </inertial>
   </link>
-  <link name="link_imu">
-  </link>
-  <joint name="joint_imu" type="fixed">
-    <parent link="base_link"/>
-    <child link="link_imu"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+
   <xacro:leg legid="fr" lrsign="-1" fhsign="1"/>
   <xacro:leg legid="hr" lrsign="-1" fhsign="-1"/>
   <xacro:leg legid="fl" lrsign="1" fhsign="1"/>
   <xacro:leg legid="hl" lrsign="1" fhsign="-1"/>
+
+  <link name="imu_link">
+  </link>
+  <joint name="joint_imu" type="fixed">
+    <parent link="body_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="lidar_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.125"/>
+      <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+         <cylinder radius="0.0508" length="0.055"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+         <cylinder radius="0.0508" length="0.055"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="body_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo -->
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <ros>
+          <remapping>~/out:=imu</remapping>
+        </ros>
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+      </plugin>
+      <always_on>true</always_on>
+      <update_rate>1000</update_rate>
+      <visualize>true</visualize>
+     <imu>
+     	<angular_velocity>
+     	  <x>
+     	    <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="ray">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>5</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1.000000</resolution>
+            <min_angle>0.000000</min_angle>
+            <max_angle>6.280000</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120000</min>
+          <max>3.5</max>
+          <resolution>0.015000</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="scan" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>lidar_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <plugin name='quad_drive' filename='libquad_drive.so'>
+      <log_level>info</log_level>
+
+      <!-- model -->
+      <mass_total>41.0</mass_total>
+
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>body_link</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="gazebo_ros_joint_state_publisher"
+        filename="libgazebo_ros_joint_state_publisher.so">
+      <!-- Update rate in Hertz -->
+      <update_rate>2</update_rate>
+      <!-- Name of joints in the model whose states will be published. -->
+      <joint_name>fr_abad_joint</joint_name>
+      <joint_name>fr_hip_joint</joint_name>
+      <joint_name>fr_knee_joint</joint_name>
+      <joint_name>hr_abad_joint</joint_name>
+      <joint_name>hr_hip_joint</joint_name>
+      <joint_name>hr_knee_joint</joint_name>
+      <joint_name>fl_abad_joint</joint_name>
+      <joint_name>fl_hip_joint</joint_name>
+      <joint_name>fl_knee_joint</joint_name>
+      <joint_name>hl_abad_joint</joint_name>
+      <joint_name>hl_hip_joint</joint_name>
+      <joint_name>hl_knee_joint</joint_name>
+    </plugin>
+  </gazebo>
 
 </robot>

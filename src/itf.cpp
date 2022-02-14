@@ -1,6 +1,15 @@
 #include "sdnova_simulation/itf.hpp"
 
 namespace sdnova {
+
+namespace consts {
+std::array<std::string const, 12> const kJointNames = {
+    "fr_abad_joint", "fr_hip_joint", "fr_knee_joint", "fl_abad_joint", "fl_hip_joint", "fl_knee_joint",
+    "hr_abad_joint", "hr_hip_joint", "hr_knee_joint", "hl_abad_joint", "hl_hip_joint", "hl_knee_joint"};
+std::array<double const, 12> const kJointPositions = {-0.785398, 1.40115, -2.953097, 0.785398, 1.40115, -2.953097,
+                                                      -0.785398, 1.40115, -2.953097, 0.785398, 1.40115, -2.953097};
+}  // namespace consts
+
 bool ImuImpl::ReadTo(sdquadx::sensor::ImuData &data) const {
   data = imudata_;
   return true;
@@ -14,9 +23,11 @@ bool ImuImpl::OnMsg(sensor_msgs::msg::Imu::ConstSharedPtr const &msg) {
 }
 
 LegImpl::LegImpl(gazebo::physics::ModelPtr model) {
-  std::array<std::string, 12> jns = {"joint_fr_abac", "joint_fr_hip", "joint_fr_knee", "joint_hr_abac", "joint_hr_hip", "joint_hr_knee",
-                                     "joint_fl_abac", "joint_fl_hip", "joint_fl_knee", "joint_hl_abac", "joint_hl_hip", "joint_hl_knee"};
-  for (size_t i = 0; i < jns.size(); i++) joints_[i] = model->GetJoint(jns[i]);
+  for (size_t i = 0; i < consts::kJointNames.size(); i++) {
+    auto joint = model->GetJoint(consts::kJointNames[i]);
+    // joint->SetPosition(0, consts::kJointPositions[i]);
+    joints_[i] = joint;
+  }
 }
 
 bool LegImpl::ReadTo(sdquadx::sensor::LegDatas &data) const {

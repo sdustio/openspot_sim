@@ -41,6 +41,10 @@ class QuadDriveImpl {
   std::shared_ptr<LegImpl> leg_itf_;
   std::shared_ptr<ImuImpl> imu_itf_;
 
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr cmd_pose_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+
   /// Pointer to model.
   gazebo::physics::ModelPtr model_;
 
@@ -52,6 +56,11 @@ class QuadDriveImpl {
 
   /// Last update time.
   gazebo::common::Time last_ctrl_at_;
+
+  /// Pointer to the update event connection.
+  gazebo::event::ConnectionPtr update_connection_;
+
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_set_callback_;
 
   /// Callback to be called at every simulation iteration.
   /// \param[in] _info Updated simulation info.
@@ -85,32 +94,37 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   ros_node_->declare_parameter<int>("state", 0);
   ros_node_->declare_parameter<int>("gait", 0);
   ros_node_->declare_parameter<double>("step_height", 0.1);
-  auto cb = ros_node_->add_on_set_parameters_callback(
+  param_set_callback_ = ros_node_->add_on_set_parameters_callback(
       [this](std::vector<rclcpp::Parameter> const &params) { return this->OnNodeParmasChanged(params); });
 
+  auto imu_topic = sdf->Get<std::string>("imu_topic", "/imu").first;
   imu_itf_ = std::make_shared<ImuImpl>();
-  ros_node_->create_subscription<sensor_msgs::msg::Imu>(
-      "imu", rclcpp::SensorDataQoS(),
+  imu_sub_ = ros_node_->create_subscription<sensor_msgs::msg::Imu>(
+      imu_topic, rclcpp::SensorDataQoS(),
       [this](sensor_msgs::msg::Imu::ConstSharedPtr const msg) { this->imu_itf_->OnMsg(msg); });
 
   leg_itf_ = std::make_shared<LegImpl>(model);
 
   auto opts = std::make_shared<sdquadx::Options>();
   opts->ctrl_sec = ctrl_dt;
+  opts->log_level = sdf->Get<std::string>("log_level", "info").first.c_str();
+
   opts->model.mass_total = sdf->Get<double>("mass_total", 41.0).first;
 
   sdquadx::RobotCtrl::Build(robotctrl_, opts, leg_itf_, imu_itf_);
   drive_ctrl_ = robotctrl_->GetDriveCtrl();
 
-  ros_node_->create_subscription<geometry_msgs::msg::Twist>(
-      "cmd_vel", rclcpp::ServicesQoS(),
+  auto drive_twist_topic = sdf->Get<std::string>("drive_twist_topic", "/cmd_vel").first;
+  cmd_vel_sub_ = ros_node_->create_subscription<geometry_msgs::msg::Twist>(
+      drive_twist_topic, rclcpp::ServicesQoS(),
       [this](geometry_msgs::msg::Twist::ConstSharedPtr const msg) { this->OnCmdVel(msg); });
 
-  ros_node_->create_subscription<geometry_msgs::msg::Pose>(
-      "cmd_pose", rclcpp::ServicesQoS(),
+  auto drive_pose_topic = sdf->Get<std::string>("drive_pose_topic", "/cmd_pose").first;
+  cmd_pose_sub_ = ros_node_->create_subscription<geometry_msgs::msg::Pose>(
+      drive_pose_topic, rclcpp::ServicesQoS(),
       [this](geometry_msgs::msg::Pose::ConstSharedPtr const msg) { this->OnCmdPose(msg); });
 
-  gazebo::event::Events::ConnectWorldUpdateBegin(
+  update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
       [this](gazebo::common::UpdateInfo const &info) { this->OnUpdate(info); });
 
   return true;
