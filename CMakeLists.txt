@@ -76,7 +76,7 @@ install(
 )
 
 install(
-  DIRECTORY launch urdf world
+  DIRECTORY launch models urdf world
   DESTINATION share/${PROJECT_NAME}
 )
 
