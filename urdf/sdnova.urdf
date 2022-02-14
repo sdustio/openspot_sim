@@ -290,7 +290,7 @@
   </gazebo>
 
   <gazebo>
-    <plugin name='quad_drive' filename='libsdnova_simulation.so'>
+    <plugin name='sdnova_drive' filename='libsdnova_simulation.so'>
       <log_level>info</log_level>
 
       <!-- model -->

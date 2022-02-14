@@ -34,7 +34,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(sdquadx REQUIRED)
 
 add_library(sdnova_simulation SHARED
-  src/quad_drive.cpp
+  src/drive.cpp
   src/itf.cpp
 )
 target_include_directories(sdnova_simulation PUBLIC
