@@ -33,16 +33,16 @@ find_package(tf2_geometry_msgs REQUIRED)
 
 find_package(sdquadx REQUIRED)
 
-add_library(quad_drive SHARED
+add_library(sdnova_simulation SHARED
   src/quad_drive.cpp
   src/itf.cpp
 )
-target_include_directories(quad_drive PUBLIC
+target_include_directories(sdnova_simulation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(quad_drive sdquadx::sdquadx)
-ament_target_dependencies(quad_drive
+target_link_libraries(sdnova_simulation sdquadx::sdquadx)
+ament_target_dependencies(sdnova_simulation
   "gazebo_dev"
   "gazebo_ros"
   "rclcpp"
@@ -54,7 +54,7 @@ ament_target_dependencies(quad_drive
   "tf2_geometry_msgs"
 )
 ament_export_libraries(
-  quad_drive
+  sdnova_simulation
 )
 ament_export_include_directories(
   include
@@ -68,7 +68,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS quad_drive
+  TARGETS sdnova_simulation
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
