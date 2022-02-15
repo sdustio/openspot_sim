@@ -22,12 +22,11 @@
       <axis xyz="1 0 0"/>
       <xacro:if value="${lrsign==1}">
       <limit effort="300" velocity="10" upper="${0.75*pi}" lower="${-0.25*pi}"/>
-      <origin xyz="${fhsign*base_length*0.5} ${base_width*0.5} 0" rpy="0 0 0"/>
       </xacro:if>
       <xacro:if value="${lrsign==-1}">
       <limit effort="300" velocity="10" upper="${0.25*pi}" lower="${-0.75*pi}"/>
-      <origin xyz="${fhsign*base_length*0.5} ${-base_width*0.5} 0" rpy="0 0 0"/>
       </xacro:if>
+      <origin xyz="${fhsign*base_length*0.5} ${lrsign*base_width*0.5} 0" rpy="0 0 0"/>
     </joint>
     <link name="${legid}_abad_link">
       <visual>

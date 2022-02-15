@@ -22,7 +22,7 @@ def generate_launch_description():
         package='gazebo_ros',
         executable='spawn_entity.py',
         arguments=['-entity', 'sdnova', '-topic',
-                   'robot_description', '-x', '-2.0', '-y', '-0.5', '-z', '0.6'],
+                   'robot_description', '-x', '-1.5', '-y', '-0.5', '-z', '0.6'],
         output='screen'
     )
 
