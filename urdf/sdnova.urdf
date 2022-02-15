@@ -290,15 +290,17 @@
 
   <gazebo>
     <plugin name='sdnova_drive' filename='libsdnova_simulation.so'>
-      <log_level>info</log_level>
-
-      <!-- model -->
-      <mass_total>41.0</mass_total>
-
-      <!-- output -->
       <publish_odom>true</publish_odom>
       <odometry_frame>odom</odometry_frame>
       <robot_base_frame>body_link</robot_base_frame>
+      <sdquadx>
+        <log>
+          <level>info</level>
+        </log>
+        <model>
+          <mass_total>41.0</mass_total>
+        </model>
+      </sdquadx>
     </plugin>
   </gazebo>
 

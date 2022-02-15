@@ -1,7 +1,8 @@
 #pragma once
 
-#include <gazebo/common/Plugin.hh>
 #include <memory>
+
+#include "gazebo/common/Plugin.hh"
 
 namespace sdnova {
 

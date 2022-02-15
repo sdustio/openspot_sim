@@ -1,23 +1,25 @@
 #include "sdnova_simulation/drive.hpp"
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
-
-#include <gazebo/common/Time.hh>
-#include <gazebo/physics/Joint.hh>
-#include <gazebo/physics/Model.hh>
-#include <gazebo/physics/World.hh>
-#include <gazebo_ros/node.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <geometry_msgs/msg/twist.hpp>
+#include <cstdio>
 #include <memory>
-#include <nav_msgs/msg/odometry.hpp>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "gazebo/common/Time.hh"
+#include "gazebo/physics/Joint.hh"
+#include "gazebo/physics/Model.hh"
+#include "gazebo/physics/World.hh"
+#include "gazebo_ros/node.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "sdnova_simulation/itf.hpp"
 #include "sdquadx/options.h"
 #include "sdquadx/robot.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 
 namespace sdnova {
 
@@ -26,6 +28,8 @@ template <typename T>
 T Square(T a) {
   return a * a;
 }
+// Ctrl duration in seconds.
+double const kCtrlSec = 0.002;
 }  // namespace
 
 class QuadDriveImpl {
@@ -51,9 +55,6 @@ class QuadDriveImpl {
   /// A pointer to the GazeboROS node.
   gazebo_ros::Node::SharedPtr ros_node_;
 
-  /// Ctrl duration in seconds.
-  double ctrl_dt;
-
   /// Last update time.
   gazebo::common::Time last_ctrl_at_;
 
@@ -75,6 +76,9 @@ class QuadDriveImpl {
   void OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &msg);
 
   rcl_interfaces::msg::SetParametersResult OnNodeParmasChanged(std::vector<rclcpp::Parameter> const &params);
+
+ private:
+  void LoadOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf);
 };
 
 QuadDrive::QuadDrive() : impl_(std::make_unique<QuadDriveImpl>()) {}
@@ -85,7 +89,6 @@ void QuadDrive::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) { imp
 
 bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   model_ = model;
-  ctrl_dt = sdf->Get<double>("ctrl_sec", 0.002).first;
   last_ctrl_at_ = model->GetWorld()->SimTime();
 
   // Initialize ROS node
@@ -97,6 +100,7 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   param_set_callback_ = ros_node_->add_on_set_parameters_callback(
       [this](std::vector<rclcpp::Parameter> const &params) { return this->OnNodeParmasChanged(params); });
 
+  // Interface
   auto imu_topic = sdf->Get<std::string>("imu_topic", "/imu").first;
   imu_itf_ = std::make_shared<ImuImpl>();
   imu_sub_ = ros_node_->create_subscription<sensor_msgs::msg::Imu>(
@@ -105,13 +109,12 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 
   leg_itf_ = std::make_shared<LegImpl>(model);
 
+  // Options
   auto opts = std::make_shared<sdquadx::Options>();
-  opts->ctrl_sec = ctrl_dt;
-  opts->log_level = sdf->Get<std::string>("log_level", "info").first.c_str();
-
-  opts->model.mass_total = sdf->Get<double>("mass_total", 41.0).first;
-
+  LoadOptions(opts, sdf->GetElement("sdquadx"));
   sdquadx::RobotCtrl::Build(robotctrl_, opts, leg_itf_, imu_itf_);
+
+  // Drive Ctrl
   drive_ctrl_ = robotctrl_->GetDriveCtrl();
 
   auto drive_twist_topic = sdf->Get<std::string>("drive_twist_topic", "/cmd_vel").first;
@@ -130,11 +133,34 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   return true;
 }
 
+void QuadDriveImpl::LoadOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
+  opts->ctrl_sec = kCtrlSec;
+
+  std::unordered_map<std::string, sdquadx::logging::Level> loglevelmap = {
+      {"debug", sdquadx::logging::Level::Debug},
+      {"info", sdquadx::logging::Level::Info},
+      {"warn", sdquadx::logging::Level::Warn},
+      {"err", sdquadx::logging::Level::Err},
+      {"critical", sdquadx::logging::Level::Critical}};
+  std::unordered_map<std::string, sdquadx::logging::Target> logtargetmap = {
+      {"console", sdquadx::logging::Target::Console},
+      {"file", sdquadx::logging::Target::File},
+      {"rotate_file", sdquadx::logging::Target::RotateFile}};
+  auto log = sdf->GetElement("log");
+  opts->log_level = loglevelmap[log->Get<std::string>("level", "warn").first];
+  opts->log_target = logtargetmap[log->Get<std::string>("target", "console").first];
+  std::snprintf(opts->log_filename, sizeof(opts->log_filename),
+                log->Get<std::string>("filename", "log/sdquadx.log").first.c_str());
+
+  auto model = sdf->GetElement("model");
+  opts->model.mass_total = model->Get<double>("mass_total", 41.).first;
+}
+
 void QuadDriveImpl::OnUpdate(gazebo::common::UpdateInfo const &info) {
   leg_itf_->RunOnce(info);
 
   double seconds_since_last_ctrl = (info.simTime - last_ctrl_at_).Double();
-  if (seconds_since_last_ctrl < ctrl_dt) {
+  if (seconds_since_last_ctrl < kCtrlSec) {
     return;
   }
   robotctrl_->RunOnce();
