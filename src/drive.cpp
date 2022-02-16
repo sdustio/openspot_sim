@@ -1,6 +1,6 @@
 #include "sdnova_simulation/drive.hpp"
 
-#include <cstdio>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -10,6 +10,8 @@
 #include "gazebo/physics/Joint.hh"
 #include "gazebo/physics/Model.hh"
 #include "gazebo/physics/World.hh"
+#include "gazebo_ros/conversions/builtin_interfaces.hpp"
+#include "gazebo_ros/conversions/geometry_msgs.hpp"
 #include "gazebo_ros/node.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -17,9 +19,7 @@
 #include "sdnova_simulation/itf.hpp"
 #include "sdquadx/options.h"
 #include "sdquadx/robot.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
 
 namespace sdnova {
 
@@ -37,7 +37,7 @@ class QuadDriveImpl {
   bool Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf);
 
   // SdQuadX
-  sdquadx::RobotCtrl::SharedPtr robotctrl_;
+  sdquadx::RobotCtrl::SharedPtr robot_ctrl_;
   sdquadx::drive::DriveCtrl::SharedPtr drive_ctrl_;
   sdquadx::drive::Twist drive_twist_;
   sdquadx::drive::Pose drive_pose_;
@@ -48,6 +48,30 @@ class QuadDriveImpl {
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr cmd_pose_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+
+  /// True to publish odometry messages.
+  bool publish_odom_;
+
+  /// True to publish odom-to-world transforms.
+  bool publish_odom_tf_;
+
+  /// Covariance in odometry
+  double covariance_[3] = {0.0001, 0.0001, 0.001};  // TODO del
+
+  /// To publish odometry msg
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometry_pub_;
+
+  /// To broadcast TFs
+  std::shared_ptr<tf2_ros::TransformBroadcaster> transform_broadcaster_;
+
+  /// Keep latest odometry message
+  nav_msgs::msg::Odometry odom_;
+
+  /// Odometry frame ID
+  std::string odometry_frame_;
+
+  /// Robot base frame ID
+  std::string robot_base_frame_;
 
   /// Pointer to model.
   gazebo::physics::ModelPtr model_;
@@ -75,10 +99,22 @@ class QuadDriveImpl {
   /// \param[in] msg Pose command message.
   void OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &msg);
 
+  /// Update odometry.
+  /// \param[in] _current_time Current simulation time
+  void UpdateOdometry(const gazebo::common::Time &_current_time);
+
+  /// Publish odometry transforms
+  /// \param[in] _current_time Current simulation time
+  void PublishOdometryTf(const gazebo::common::Time &_current_time);
+
+  /// Publish odometry messages
+  /// \param[in] _current_time Current simulation time
+  void PublishOdometryMsg(const gazebo::common::Time &_current_time);
+
   rcl_interfaces::msg::SetParametersResult OnNodeParmasChanged(std::vector<rclcpp::Parameter> const &params);
 
  private:
-  void LoadOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf);
+  void LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf);
 };
 
 QuadDrive::QuadDrive() : impl_(std::make_unique<QuadDriveImpl>()) {}
@@ -99,33 +135,47 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   ros_node_->declare_parameter<double>("step_height", 0.1);
   param_set_callback_ = ros_node_->add_on_set_parameters_callback(
       [this](std::vector<rclcpp::Parameter> const &params) { return this->OnNodeParmasChanged(params); });
+  gazebo_ros::QoS const &qos = ros_node_->get_qos();
 
   // Interface
   auto imu_topic = sdf->Get<std::string>("imu_topic", "/imu").first;
   imu_itf_ = std::make_shared<ImuImpl>();
   imu_sub_ = ros_node_->create_subscription<sensor_msgs::msg::Imu>(
-      imu_topic, rclcpp::SensorDataQoS(),
+      imu_topic, qos.get_publisher_qos("imu", rclcpp::SensorDataQoS()),
       [this](sensor_msgs::msg::Imu::ConstSharedPtr const msg) { this->imu_itf_->OnMsg(msg); });
 
   leg_itf_ = std::make_shared<LegImpl>(model);
 
   // Options
   auto opts = std::make_shared<sdquadx::Options>();
-  LoadOptions(opts, sdf->GetElement("sdquadx"));
-  sdquadx::RobotCtrl::Build(robotctrl_, opts, leg_itf_, imu_itf_);
+  LoadSdquadxOptions(opts, sdf->GetElement("sdquadx"));
+  sdquadx::RobotCtrl::Build(robot_ctrl_, opts, leg_itf_, imu_itf_);
 
   // Drive Ctrl
-  drive_ctrl_ = robotctrl_->GetDriveCtrl();
+  drive_ctrl_ = robot_ctrl_->GetDriveCtrl();
 
   auto drive_twist_topic = sdf->Get<std::string>("drive_twist_topic", "/cmd_vel").first;
   cmd_vel_sub_ = ros_node_->create_subscription<geometry_msgs::msg::Twist>(
-      drive_twist_topic, rclcpp::ServicesQoS(),
+      drive_twist_topic, qos.get_publisher_qos("drive_twist", rclcpp::ServicesQoS()),
       [this](geometry_msgs::msg::Twist::ConstSharedPtr const msg) { this->OnCmdVel(msg); });
 
   auto drive_pose_topic = sdf->Get<std::string>("drive_pose_topic", "/cmd_pose").first;
   cmd_pose_sub_ = ros_node_->create_subscription<geometry_msgs::msg::Pose>(
-      drive_pose_topic, rclcpp::ServicesQoS(),
+      drive_pose_topic, qos.get_publisher_qos("drive_pose", rclcpp::ServicesQoS()),
       [this](geometry_msgs::msg::Pose::ConstSharedPtr const msg) { this->OnCmdPose(msg); });
+
+  // Odometry
+  odometry_frame_ = sdf->Get<std::string>("odometry_frame", "odom").first;
+  robot_base_frame_ = sdf->Get<std::string>("robot_base_frame", "base_footprint").first;
+  publish_odom_ = sdf->Get<bool>("publish_odom", false).first;
+  publish_odom_tf_ = sdf->Get<bool>("publish_odom_tf", false).first;
+  if (publish_odom_) {
+    odometry_pub_ =
+        ros_node_->create_publisher<nav_msgs::msg::Odometry>("odom", qos.get_publisher_qos("odom", rclcpp::QoS(1)));
+  }
+  if (publish_odom_tf_) {
+    transform_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(ros_node_);
+  }
 
   update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
       [this](gazebo::common::UpdateInfo const &info) { this->OnUpdate(info); });
@@ -133,7 +183,7 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   return true;
 }
 
-void QuadDriveImpl::LoadOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
+void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
   opts->ctrl_sec = kCtrlSec;
 
   std::unordered_map<std::string, sdquadx::logging::Level> loglevelmap = {
@@ -149,8 +199,8 @@ void QuadDriveImpl::LoadOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPt
   auto log = sdf->GetElement("log");
   opts->log_level = loglevelmap[log->Get<std::string>("level", "warn").first];
   opts->log_target = logtargetmap[log->Get<std::string>("target", "console").first];
-  std::snprintf(opts->log_filename, sizeof(opts->log_filename),
-                log->Get<std::string>("filename", "log/sdquadx.log").first.c_str());
+  std::strncpy(opts->log_filename, log->Get<std::string>("filename", "log/sdquadx.log").first.c_str(),
+               sizeof(opts->log_filename) - 1);
 
   auto model = sdf->GetElement("model");
   opts->model.mass_total = model->Get<double>("mass_total", 41.).first;
@@ -163,7 +213,12 @@ void QuadDriveImpl::OnUpdate(gazebo::common::UpdateInfo const &info) {
   if (seconds_since_last_ctrl < kCtrlSec) {
     return;
   }
-  robotctrl_->RunOnce();
+  robot_ctrl_->RunOnce();
+
+  UpdateOdometry(info.simTime);
+  if (publish_odom_) PublishOdometryMsg(info.simTime);
+  if (publish_odom_tf_) PublishOdometryTf(info.simTime);
+
   last_ctrl_at_ = info.simTime;
 }
 
@@ -188,6 +243,59 @@ void QuadDriveImpl::OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &ms
       std::atan2(2 * (q[2] * q[3] + q[0] * q[1]), Square(q[0]) - Square(q[1]) - Square(q[2]) + Square(q[3]));
 
   drive_ctrl_->UpdatePose(drive_pose_);
+}
+
+void QuadDriveImpl::UpdateOdometry(const gazebo::common::Time &_current_time) {
+  auto const &est = robot_ctrl_->GetEstimatState();
+
+  odom_.pose.pose.position.x = est.pos[0];
+  odom_.pose.pose.position.x = est.pos[0];
+  odom_.pose.pose.position.x = est.pos[0];
+
+  odom_.pose.pose.orientation.w = est.ori[0];
+  odom_.pose.pose.orientation.x = est.ori[1];
+  odom_.pose.pose.orientation.y = est.ori[2];
+  odom_.pose.pose.orientation.z = est.ori[3];
+
+  odom_.twist.twist.angular.z = est.avel_robot[2];
+  odom_.twist.twist.linear.x = est.lvel_robot[0];
+  odom_.twist.twist.linear.y = est.lvel_robot[1];
+}
+
+void QuadDriveImpl::PublishOdometryTf(const gazebo::common::Time &_current_time) {
+  geometry_msgs::msg::TransformStamped msg;
+  msg.header.stamp = gazebo_ros::Convert<builtin_interfaces::msg::Time>(_current_time);
+  msg.header.frame_id = odometry_frame_;
+  msg.child_frame_id = robot_base_frame_;
+  msg.transform.translation = gazebo_ros::Convert<geometry_msgs::msg::Vector3>(odom_.pose.pose.position);
+  msg.transform.rotation = odom_.pose.pose.orientation;
+
+  transform_broadcaster_->sendTransform(msg);
+}
+
+void QuadDriveImpl::PublishOdometryMsg(const gazebo::common::Time &_current_time) {
+  // Set covariance
+  odom_.pose.covariance[0] = covariance_[0];
+  odom_.pose.covariance[7] = covariance_[1];
+  odom_.pose.covariance[14] = 1000000000000.0;
+  odom_.pose.covariance[21] = 1000000000000.0;
+  odom_.pose.covariance[28] = 1000000000000.0;
+  odom_.pose.covariance[35] = covariance_[2];
+
+  odom_.twist.covariance[0] = covariance_[0];
+  odom_.twist.covariance[7] = covariance_[1];
+  odom_.twist.covariance[14] = 1000000000000.0;
+  odom_.twist.covariance[21] = 1000000000000.0;
+  odom_.twist.covariance[28] = 1000000000000.0;
+  odom_.twist.covariance[35] = covariance_[2];
+
+  // Set header
+  odom_.header.frame_id = odometry_frame_;
+  odom_.child_frame_id = robot_base_frame_;
+  odom_.header.stamp = gazebo_ros::Convert<builtin_interfaces::msg::Time>(_current_time);
+
+  // Publish
+  odometry_pub_->publish(odom_);
 }
 
 rcl_interfaces::msg::SetParametersResult QuadDriveImpl::OnNodeParmasChanged(
