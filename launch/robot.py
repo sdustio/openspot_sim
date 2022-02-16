@@ -12,6 +12,8 @@ def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
     pkg_sdnova = get_package_share_directory('sdnova_simulation')
     model_path = os.path.join(pkg_sdnova, 'urdf/sdnova.urdf')
+    posx = LaunchConfiguration('posx')
+    posy = LaunchConfiguration('posy')
 
     robot_state_publisher_node = launch_ros.actions.Node(
         package='robot_state_publisher',
@@ -22,12 +24,16 @@ def generate_launch_description():
         package='gazebo_ros',
         executable='spawn_entity.py',
         arguments=['-entity', 'sdnova', '-topic',
-                   'robot_description', '-x', '-1.5', '-y', '-0.5', '-z', '0.6'],
+                   'robot_description', '-x', posx, '-y', posy, '-z', '0.7'],
         output='screen'
     )
 
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true',
+                              description='Set to "false" to run headless.'),
+        DeclareLaunchArgument('posx', default_value='0',
+                              description='Set to "false" to run headless.'),
+        DeclareLaunchArgument('posy', default_value='0',
                               description='Set to "false" to run headless.'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(

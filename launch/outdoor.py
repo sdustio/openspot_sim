@@ -13,6 +13,6 @@ def generate_launch_description():
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/robot.py']),
-            launch_arguments={'world': world_path}.items()
+            launch_arguments={'world': world_path, 'posx': '-1', 'posy': '0.5'}.items()
         ),
     ])
