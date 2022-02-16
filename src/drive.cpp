@@ -56,7 +56,7 @@ class QuadDriveImpl {
   bool publish_odom_tf_;
 
   /// Covariance in odometry
-  double covariance_[3] = {0.0001, 0.0001, 0.001};  // TODO del
+  double covariance_[3];
 
   /// To publish odometry msg
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometry_pub_;
@@ -176,6 +176,10 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   if (publish_odom_tf_) {
     transform_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(ros_node_);
   }
+
+  covariance_[0] = sdf->Get<double>("covariance_x", 0.01).first;
+  covariance_[1] = sdf->Get<double>("covariance_y", 0.01).first;
+  covariance_[2] = sdf->Get<double>("covariance_yaw", 0.01).first;
 
   update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
       [this](gazebo::common::UpdateInfo const &info) { this->OnUpdate(info); });
