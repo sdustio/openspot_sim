@@ -10,8 +10,8 @@ import launch_ros
 
 def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
-    pkg_sdnova = get_package_share_directory('sdnova_simulation')
-    model_path = os.path.join(pkg_sdnova, 'urdf/sdnova.urdf')
+    pkg_this = get_package_share_directory('sdnova_simulation')
+    model_path = os.path.join(pkg_this, 'urdf/sdnova.urdf')
     posx = LaunchConfiguration('posx')
     posy = LaunchConfiguration('posy')
 

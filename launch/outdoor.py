@@ -8,8 +8,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-    pkg_sdnova = get_package_share_directory('sdnova_simulation')
-    world_path = os.path.join(pkg_sdnova, 'world/outdoor.sdf')
+    pkg_this = get_package_share_directory('sdnova_simulation')
+    world_path = os.path.join(pkg_this, 'world/outdoor.sdf')
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/robot.py']),
