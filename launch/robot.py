@@ -29,7 +29,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('gui', default_value='true',
+        DeclareLaunchArgument('gui', default_value='True',
                               description='Set to "false" to run headless.'),
         DeclareLaunchArgument('posx', default_value='0',
                               description='model init pos x.'),
