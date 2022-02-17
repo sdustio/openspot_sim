@@ -32,9 +32,9 @@ def generate_launch_description():
         DeclareLaunchArgument('gui', default_value='true',
                               description='Set to "false" to run headless.'),
         DeclareLaunchArgument('posx', default_value='0',
-                              description='Set to "false" to run headless.'),
+                              description='model init pos x.'),
         DeclareLaunchArgument('posy', default_value='0',
-                              description='Set to "false" to run headless.'),
+                              description='model init pos y.'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(pkg_gazebo_ros, 'launch', 'gzserver.launch.py')
