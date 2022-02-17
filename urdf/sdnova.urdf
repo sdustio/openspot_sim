@@ -17,7 +17,7 @@
   <!-- lrsign : 1(left), -1(right); fhsign : 1(front), -1(hind) -->
   <xacro:macro name="leg" params="legid lrsign fhsign">
     <joint name="${legid}_abad_joint" type="revolute">
-      <parent link="body_link"/>
+      <parent link="base_link"/>
       <child link="${legid}_abad_link"/>
       <axis xyz="1 0 0"/>
       <xacro:if value="${lrsign==1}">
@@ -120,13 +120,13 @@
     </joint>
   </xacro:macro>
 
-  <link name="base_link"/>
+  <link name="base_footprint"/>
   <joint name="base_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="body_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
   </joint>
-  <link name="body_link">
+  <link name="base_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
@@ -154,7 +154,7 @@
   <link name="imu_link">
   </link>
   <joint name="joint_imu" type="fixed">
-    <parent link="body_link"/>
+    <parent link="base_link"/>
     <child link="imu_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
@@ -182,7 +182,7 @@
   </link>
 
   <joint name="lidar_joint" type="fixed">
-    <parent link="body_link"/>
+    <parent link="base_link"/>
     <child link="lidar_link"/>
     <origin xyz="0 0 ${base_height/2 + 0.025}" rpy="0 0 0"/>
   </joint>
@@ -296,7 +296,7 @@
       <publish_odom>true</publish_odom>
       <publish_odom_tf>true</publish_odom_tf>
       <odometry_frame>odom</odometry_frame>
-      <robot_base_frame>base_link</robot_base_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
       <sdquadx>
         <log>
           <level>info</level>
