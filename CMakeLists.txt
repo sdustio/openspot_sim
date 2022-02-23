@@ -32,16 +32,16 @@ find_package(sensor_msgs REQUIRED)
 
 find_package(sdquadx REQUIRED)
 
-add_library(sdnova_simulation SHARED
+add_library(${PROJECT_NAME} SHARED
   src/drive.cpp
   src/itf.cpp
 )
-target_include_directories(sdnova_simulation PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(sdnova_simulation sdquadx::sdquadx)
-ament_target_dependencies(sdnova_simulation
+target_link_libraries(${PROJECT_NAME} sdquadx::sdquadx)
+ament_target_dependencies(${PROJECT_NAME}
   "gazebo_dev"
   "gazebo_ros"
   "rclcpp"
@@ -51,8 +51,11 @@ ament_target_dependencies(sdnova_simulation
   "nav_msgs"
   "sensor_msgs"
 )
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  INSTALL_RPATH_USE_LINK_PATH ON
+)
 ament_export_libraries(
-  sdnova_simulation
+  ${PROJECT_NAME}
 )
 ament_export_include_directories(
   include
@@ -66,7 +69,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS sdnova_simulation
+  TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
