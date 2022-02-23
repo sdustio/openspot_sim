@@ -28,6 +28,19 @@ template <typename T>
 T Square(T a) {
   return a * a;
 }
+
+void ExtractVector(std::vector<double> &out, std::string const &str, std::string delimiter = " ") {
+  out.clear();
+  std::size_t start = 0;
+  std::size_t end = str.find(delimiter);
+  while (end != std::string::npos) {
+    out.push_back(std::stod(str.substr(start, end - start)));
+    start = end + delimiter.size();
+    end = str.find(delimiter, start);
+  }
+  out.push_back(std::stod(str.substr(start, str.size() - start)));
+}
+
 // Ctrl duration in seconds.
 double const kCtrlSec = 0.002;
 }  // namespace
