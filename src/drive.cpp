@@ -43,6 +43,16 @@ void ExtractVector(std::vector<double> &out, std::string const &str, std::string
 
 // Ctrl duration in seconds.
 double const kCtrlSec = 0.002;
+std::unordered_map<std::string, sdquadx::logging::Level> const kLogLevelMap = {
+    {"debug", sdquadx::logging::Level::Debug},
+    {"info", sdquadx::logging::Level::Info},
+    {"warn", sdquadx::logging::Level::Warn},
+    {"err", sdquadx::logging::Level::Err},
+    {"critical", sdquadx::logging::Level::Critical}};
+std::unordered_map<std::string, sdquadx::logging::Target> const kLogTargetMap = {
+    {"console", sdquadx::logging::Target::Console},
+    {"file", sdquadx::logging::Target::File},
+    {"rotate_file", sdquadx::logging::Target::RotateFile}};
 }  // namespace
 
 class QuadDriveImpl {
@@ -203,19 +213,9 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
   opts->ctrl_sec = kCtrlSec;
 
-  std::unordered_map<std::string, sdquadx::logging::Level> loglevelmap = {
-      {"debug", sdquadx::logging::Level::Debug},
-      {"info", sdquadx::logging::Level::Info},
-      {"warn", sdquadx::logging::Level::Warn},
-      {"err", sdquadx::logging::Level::Err},
-      {"critical", sdquadx::logging::Level::Critical}};
-  std::unordered_map<std::string, sdquadx::logging::Target> logtargetmap = {
-      {"console", sdquadx::logging::Target::Console},
-      {"file", sdquadx::logging::Target::File},
-      {"rotate_file", sdquadx::logging::Target::RotateFile}};
   auto log = sdf->GetElement("log");
-  opts->log_level = loglevelmap[log->Get<std::string>("level", "warn").first];
-  opts->log_target = logtargetmap[log->Get<std::string>("target", "console").first];
+  opts->log_level = kLogLevelMap.at(log->Get<std::string>("level", "warn").first);
+  opts->log_target = kLogTargetMap.at(log->Get<std::string>("target", "console").first);
   std::strncpy(opts->log_filename, log->Get<std::string>("filename", "log/sdquadx.log").first.c_str(),
                sizeof(opts->log_filename) - 1);
 
