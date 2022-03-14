@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot name="sdnova" xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:property name="base_mass" value="15"/>
-  <xacro:property name="base_length" value="0.58"/>
-  <xacro:property name="base_width" value="0.132"/>
-  <xacro:property name="base_height" value="0.099"/>
+  <xacro:property name="body_length" value="0.58"/>
+  <xacro:property name="body_width" value="0.132"/>
+  <xacro:property name="body_height" value="0.099"/>
+  <xacro:property name="body_mass" value="15"/>
   <xacro:property name="abad_mass" value="2"/>
   <xacro:property name="abad_radius" value="0.05"/>
   <xacro:property name="abad_height" value="0.084"/>
@@ -27,7 +27,7 @@
       <xacro:if value="${lrsign==-1}">
       <limit effort="${max_effort}" velocity="10" upper="${0.25*pi}" lower="${-0.75*pi}"/>
       </xacro:if>
-      <origin xyz="${fhsign*base_length*0.5} ${lrsign*base_width*0.5} 0" rpy="0 0 0"/>
+      <origin xyz="${fhsign*body_length*0.5} ${lrsign*body_width*0.5} 0" rpy="0 0 0"/>
     </joint>
     <link name="${legid}_abad_link">
       <visual>
@@ -125,24 +125,24 @@
   <joint name="base_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="base_link"/>
-    <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${body_height/2}" rpy="0 0 0"/>
   </joint>
   <link name="base_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="${base_length} ${base_width} ${base_height}"/>
+        <box size="${body_length} ${body_width} ${body_height}"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="${base_length} ${base_width} ${base_height}"/>
+        <box size="${body_length} ${body_width} ${body_height}"/>
       </geometry>
     </collision>
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="${base_mass}"/>
+      <mass value="${body_mass}"/>
       <inertia ixx="0.0567188" ixy="0" ixz="0" iyy="0.721252" iyz="0" izz="0.737133"/>
     </inertial>
   </link>
@@ -185,7 +185,7 @@
   <joint name="lidar_joint" type="fixed">
     <parent link="base_link"/>
     <child link="lidar_link"/>
-    <origin xyz="0 0 ${base_height/2 + 0.025}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${body_height/2 + 0.025}" rpy="0 0 0"/>
   </joint>
 
   <!-- Gazebo -->
@@ -303,8 +303,69 @@
           <level>info</level>
         </log>
         <model>
-          <mass_total>31.0</mass_total>
+          <body_length>${body_length}</body_length>
+          <body_width>${body_width}</body_width>
+          <body_height>${body_height}</body_height>
+
+          <mass_body>${body_mass}</mass_body>
+          <mass_abad>${abad_mass}</mass_abad>
+          <mass_hip>${hip_mass}</mass_hip>
+          <mass_knee>${knee_mass}</mass_knee>
+          <mass_total>${body_mass + (abad_mass + hip_mass + knee_mass) * 4}</mass_total>
+
+          <link_length_abad>${abad_height*0.75 + hip_width}</link_length_abad>
+          <link_length_hip>${hip_length}</link_length_hip>
+          <link_length_knee>${knee_length}</link_length_knee>
+
+          <basic_locomotion_height>0.4</basic_locomotion_height>
+          <fast_locomotion_height>0.34</fast_locomotion_height>
+          <foot_offsetx>-0.03</foot_offsetx>
+          <foot_offsety>-0.02</foot_offsety>
+
+          <location_abad_fl>0.29 0.066 0.0</location_abad_fl>
+          <location_hip_fl>0.05 0.093 0.0</location_hip_fl>
+          <location_knee_fl>0 0 -0.284</location_knee_fl>
+
+          <com_body>0 0 0</com_body>
+          <com_abad_fl>0.05 0.021 0.0</com_abad_fl>
+          <com_hip_fl>0 0 -0.142</com_hip_fl>
+          <com_knee_fl>0 0 -0.142</com_knee_fl>
+
+          <inertia_body>0.0567188 0 0 0 0.721252 0 0 0 0.737133</inertia_body>
+          <inertia_abad>0.002426 0 0 0 0.0025 0 0 0 0.002426</inertia_abad>
+          <inertia_hip>0.00679633 0 0 0 0.00682342 0 0 0 0.000177083</inertia_hip>
+          <inertia_knee>0.00679633 0 0 0 0.00682342 0 0 0 0.000177083</inertia_knee>
+          <inertia_total>0.07487 0 0 0 2.1566 0 0 0 2.1775</inertia_total>
+
+          <max_com_height>0.55</max_com_height>
+          <max_body_roll>0.523</max_body_roll>
+          <max_body_pitch>0.785</max_body_pitch>
+          <max_body_yaw>0.523</max_body_yaw>
         </model>
+        <ctrl>
+          <mpc_iters>15</mpc_iters>
+          <mpc_weights>1.25 1.25 10 2 2 50 0 0 0.3 1.5 1.5 0.2 0</mpc_weights>
+          <footskd_bonus_swing>0</footskd_bonus_swing>
+          <footskd_vkp>0.1</footskd_vkp>
+          <kp_bodypos>100 100 100</kp_bodypos>
+          <kd_bodypos>10 10 20</kd_bodypos>
+          <kp_bodyori>100 100 100</kp_bodyori>
+          <kd_bodyori>10 10 10</kd_bodyori>
+          <kp_foot>500 500 500</kp_foot>
+          <kd_foot>60 60 60</kd_foot>
+          <kp_joint>3 3 3</kp_joint>
+          <kd_joint>1.0 0.2 0.2</kd_joint>
+          <kp_jpos>80 80 80</kp_jpos>
+          <kd_jpos>1 1 1</kd_jpos>
+          <jpos_init>-0.0 1.4 -2.7 0.0 1.4 -2.7 -0.0 1.4 -2.7 0.0 1.4 -2.7</jpos_init>
+          <jpos_fold>-0.0 1.4 -2.7 0.0 1.4 -2.7 -0.0 1.4 -2.7 0.0 1.4 -2.7</jpos_fold>
+          <jpos_stand>-0.0 0.8 -1.6 0.0 0.8 -1.6 -0.0 0.9 -1.5 0.0 0.9 -1.5</jpos_stand>
+          <jpos_rolling>1.5 1.6 -2.77 1.3 3.1 -2.77 1.5 1.6 -2.77 1.3 3.1 -2.77</jpos_rolling>
+          <max_trot_lvel_x>1.8</max_trot_lvel_x>
+          <min_trot_lvel_x>-0.8</min_trot_lvel_x>
+          <max_trot_lvel_y>0.4</max_trot_lvel_y>
+          <max_trot_avel_z>0.8</max_trot_avel_z>
+        </ctrl>
       </sdquadx>
     </plugin>
   </gazebo>

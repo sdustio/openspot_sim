@@ -1,5 +1,6 @@
 #include "sdnova_simulation/drive.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -29,7 +30,7 @@ T Square(T a) {
   return a * a;
 }
 
-void ExtractVector(std::vector<double> &out, std::string const &str, std::string delimiter = " ") {
+void ExtractVectorf(std::vector<double> &out, std::string const &str, std::string delimiter = " ") {
   out.clear();
   std::size_t start = 0;
   std::size_t end = str.find(delimiter);
@@ -211,6 +212,9 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 }
 
 void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
+  std::vector<double> v;
+
+  // options
   opts->ctrl_sec = kCtrlSec;
 
   auto log = sdf->GetElement("log");
@@ -219,8 +223,100 @@ void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::El
   std::strncpy(opts->log_filename, log->Get<std::string>("filename", "log/sdquadx.log").first.c_str(),
                sizeof(opts->log_filename) - 1);
 
+  // model options
   auto model = sdf->GetElement("model");
+  opts->model.body_length = model->Get<double>("body_length", 0.58).first;
+  opts->model.body_width = model->Get<double>("body_width", 0.58).first;
+  opts->model.body_height = model->Get<double>("body_height", 0.58).first;
+
+  opts->model.mass_body = model->Get<double>("mass_body", 25.).first;
+  opts->model.mass_abad = model->Get<double>("mass_abad", 2.).first;
+  opts->model.mass_hip = model->Get<double>("mass_hip", 1.).first;
+  opts->model.mass_knee = model->Get<double>("mass_knee", 1.).first;
   opts->model.mass_total = model->Get<double>("mass_total", 41.).first;
+
+  opts->model.link_length_abad = model->Get<double>("link_length_abad", 0.093).first;
+  opts->model.link_length_hip = model->Get<double>("link_length_hip", 0.284).first;
+  opts->model.link_length_knee = model->Get<double>("link_length_knee", 0.284).first;
+
+  opts->model.basic_locomotion_height = model->Get<double>("basic_locomotion_height", 0.4).first;
+  opts->model.fast_locomotion_height = model->Get<double>("fast_locomotion_height", 0.34).first;
+  opts->model.foot_offsetx = model->Get<double>("foot_offsetx", -0.03).first;
+  opts->model.foot_offsety = model->Get<double>("foot_offsety", -0.02).first;
+
+  ExtractVectorf(v, model->Get<std::string>("location_abad_fl", "0.29 0.066 0.0").first);
+  std::copy_n(v.begin(), 3, opts->model.location_abad_fl.begin());
+  ExtractVectorf(v, model->Get<std::string>("location_hip_fl", "0.05 0.093 0.0").first);
+  std::copy_n(v.begin(), 3, opts->model.location_hip_fl.begin());
+  ExtractVectorf(v, model->Get<std::string>("location_knee_fl", "0 0 -0.284").first);
+  std::copy_n(v.begin(), 3, opts->model.location_knee_fl.begin());
+
+  ExtractVectorf(v, model->Get<std::string>("com_body", "0 0 0").first);
+  std::copy_n(v.begin(), 3, opts->model.com_body.begin());
+  ExtractVectorf(v, model->Get<std::string>("com_abad_fl", "0.05 0.021 0.0").first);
+  std::copy_n(v.begin(), 3, opts->model.com_abad_fl.begin());
+  ExtractVectorf(v, model->Get<std::string>("com_hip_fl", "0 0 -0.142").first);
+  std::copy_n(v.begin(), 3, opts->model.com_hip_fl.begin());
+  ExtractVectorf(v, model->Get<std::string>("com_knee_fl", "0 0 -0.142").first);
+  std::copy_n(v.begin(), 3, opts->model.com_knee_fl.begin());
+
+  ExtractVectorf(v, model->Get<std::string>("inertia_body", "0.0567188 0 0 0 0.721252 0 0 0 0.737133").first);
+  std::copy_n(v.begin(), 9, opts->model.inertia_body.begin());
+  ExtractVectorf(v, model->Get<std::string>("inertia_abad", "0.002426 0 0 0 0.0025 0 0 0 0.002426").first);
+  std::copy_n(v.begin(), 9, opts->model.inertia_abad.begin());
+  ExtractVectorf(v, model->Get<std::string>("inertia_hip", "0.00679633 0 0 0 0.00682342 0 0 0 0.000177083").first);
+  std::copy_n(v.begin(), 9, opts->model.inertia_hip.begin());
+  ExtractVectorf(v, model->Get<std::string>("inertia_knee", "0.00679633 0 0 0 0.00682342 0 0 0 0.000177083").first);
+  std::copy_n(v.begin(), 9, opts->model.inertia_knee.begin());
+  ExtractVectorf(v, model->Get<std::string>("inertia_total", "0.07487 0 0 0 2.1566 0 0 0 2.1775").first);
+  std::copy_n(v.begin(), 9, opts->model.inertia_total.begin());
+
+  opts->model.max_com_height = model->Get<double>("max_com_height", 0.55).first;
+  opts->model.max_body_roll = model->Get<double>("max_body_roll", 0.523).first;
+  opts->model.max_body_pitch = model->Get<double>("max_body_pitch", 0.785).first;
+  opts->model.max_body_yaw = model->Get<double>("max_body_yaw", 0.523).first;
+
+  // ctrl options
+  auto ctrl = sdf->GetElement("ctrl");
+  opts->ctrl.mpc_iters = ctrl->Get<int>("mpc_iters", 15).first;
+  ExtractVectorf(v, ctrl->Get<std::string>("mpc_weights", "1.25 1.25 10 2 2 50 0 0 0.3 1.5 1.5 0.2 0").first);
+  std::copy_n(v.begin(), 13, opts->ctrl.mpc_weights.begin());
+  opts->ctrl.footskd_bonus_swing = ctrl->Get<double>("footskd_bonus_swing", 0.).first;
+  opts->ctrl.footskd_vkp = ctrl->Get<double>("footskd_vkp", 0.1).first;
+  ExtractVectorf(v, ctrl->Get<std::string>("kp_bodypos", "100 100 100").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kp_bodypos.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kd_bodypos", "10 10 20").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kd_bodypos.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kp_bodyori", "100 100 100").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kp_bodyori.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kd_bodyori", "10 10 10").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kd_bodyori.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kp_foot", "500 500 500").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kp_foot.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kd_foot", "60 60 60").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kd_foot.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kp_joint", "3 3 3").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kp_joint.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kd_joint", "1.0 0.2 0.2").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kd_joint.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kp_jpos", "80 80 80").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kp_jpos.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("kd_jpos", "1 1 1").first);
+  std::copy_n(v.begin(), 3, opts->ctrl.kd_jpos.begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("jpos_init", "-0.0 1.4 -2.7 0.0 1.4 -2.7 -0.0 1.4 -2.7 0.0 1.4 -2.7").first);
+  std::copy_n(v.begin(), 12, opts->ctrl.jpos_init.front().begin());
+  ExtractVectorf(v, ctrl->Get<std::string>("jpos_fold", "-0.0 1.4 -2.7 0.0 1.4 -2.7 -0.0 1.4 -2.7 0.0 1.4 -2.7").first);
+  std::copy_n(v.begin(), 12, opts->ctrl.jpos_fold.front().begin());
+  ExtractVectorf(v,
+                 ctrl->Get<std::string>("jpos_stand", "-0.0 0.8 -1.6 0.0 0.8 -1.6 -0.0 0.9 -1.5 0.0 0.9 -1.5").first);
+  std::copy_n(v.begin(), 12, opts->ctrl.jpos_stand.front().begin());
+  ExtractVectorf(
+      v, ctrl->Get<std::string>("jpos_rolling", "1.5 1.6 -2.77 1.3 3.1 -2.77 1.5 1.6 -2.77 1.3 3.1 -2.77").first);
+  std::copy_n(v.begin(), 12, opts->ctrl.jpos_rolling.front().begin());
+  opts->ctrl.max_trot_lvel_x = ctrl->Get<double>("max_trot_lvel_x", 1.8).first;
+  opts->ctrl.min_trot_lvel_x = ctrl->Get<double>("min_trot_lvel_x", -0.8).first;
+  opts->ctrl.max_trot_lvel_y = ctrl->Get<double>("max_trot_lvel_y", 0.4).first;
+  opts->ctrl.max_trot_avel_z = ctrl->Get<double>("max_trot_avel_z", 0.8).first;
 }
 
 void QuadDriveImpl::OnUpdate(gazebo::common::UpdateInfo const &info) {
