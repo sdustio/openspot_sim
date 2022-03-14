@@ -361,8 +361,8 @@ void QuadDriveImpl::UpdateOdometry() {
   auto const &est = robot_ctrl_->GetEstimatState();
 
   odom_.pose.pose.position.x = est.pos[0];
-  odom_.pose.pose.position.x = est.pos[0];
-  odom_.pose.pose.position.x = est.pos[0];
+  odom_.pose.pose.position.y = est.pos[1];
+  odom_.pose.pose.position.z = est.pos[2];
 
   odom_.pose.pose.orientation.w = est.ori[0];
   odom_.pose.pose.orientation.x = est.ori[1];
