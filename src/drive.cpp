@@ -124,8 +124,7 @@ class QuadDriveImpl {
   void OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &msg);
 
   /// Update odometry.
-  /// \param[in] _current_time Current simulation time
-  void UpdateOdometry(const gazebo::common::Time &_current_time);
+  void UpdateOdometry();
 
   /// Publish odometry transforms
   /// \param[in] _current_time Current simulation time
@@ -328,7 +327,7 @@ void QuadDriveImpl::OnUpdate(gazebo::common::UpdateInfo const &info) {
   }
   robot_ctrl_->RunOnce();
 
-  UpdateOdometry(info.simTime);
+  UpdateOdometry();
   if (publish_odom_) PublishOdometryMsg(info.simTime);
   if (publish_odom_tf_) PublishOdometryTf(info.simTime);
 
@@ -358,7 +357,7 @@ void QuadDriveImpl::OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &ms
   drive_ctrl_->UpdatePose(drive_pose_);
 }
 
-void QuadDriveImpl::UpdateOdometry(const gazebo::common::Time &_current_time) {
+void QuadDriveImpl::UpdateOdometry() {
   auto const &est = robot_ctrl_->GetEstimatState();
 
   odom_.pose.pose.position.x = est.pos[0];
