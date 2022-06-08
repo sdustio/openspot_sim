@@ -4,15 +4,15 @@
 
 #include "gazebo/common/Plugin.hh"
 
-namespace sdnova {
+namespace openspot {
 
 class QuadDriveImpl;
 
-class QuadDrive : public gazebo::ModelPlugin {
+class Drive : public gazebo::ModelPlugin {
  public:
-  QuadDrive();
+  Drive();
 
-  virtual ~QuadDrive();
+  virtual ~Drive();
 
  protected:
   void Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) override;
@@ -21,4 +21,4 @@ class QuadDrive : public gazebo::ModelPlugin {
   std::unique_ptr<QuadDriveImpl> impl_;
 };
 
-}  // namespace sdnova
+}  // namespace openspot

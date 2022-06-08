@@ -1,4 +1,4 @@
-#include "sdnova_simulation/drive.hpp"
+#include "openspot/drive.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -17,12 +17,12 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "sdnova_simulation/itf.hpp"
-#include "sdquadx/options.h"
-#include "sdquadx/robot.h"
+#include "openspot/itf.hpp"
+#include "spotng/options.h"
+#include "spotng/robot.h"
 #include "tf2_ros/transform_broadcaster.h"
 
-namespace sdnova {
+namespace openspot {
 
 namespace {
 template <typename T>
@@ -44,27 +44,27 @@ void ExtractVectorf(std::vector<double> &out, std::string const &str, std::strin
 
 // Ctrl duration in seconds.
 double const kCtrlSec = 0.002;
-std::unordered_map<std::string, sdquadx::logging::Level> const kLogLevelMap = {
-    {"debug", sdquadx::logging::Level::Debug},
-    {"info", sdquadx::logging::Level::Info},
-    {"warn", sdquadx::logging::Level::Warn},
-    {"err", sdquadx::logging::Level::Err},
-    {"critical", sdquadx::logging::Level::Critical}};
-std::unordered_map<std::string, sdquadx::logging::Target> const kLogTargetMap = {
-    {"console", sdquadx::logging::Target::Console},
-    {"file", sdquadx::logging::Target::File},
-    {"rotate_file", sdquadx::logging::Target::RotateFile}};
+std::unordered_map<std::string, spotng::logging::Level> const kLogLevelMap = {
+    {"debug", spotng::logging::Level::Debug},
+    {"info", spotng::logging::Level::Info},
+    {"warn", spotng::logging::Level::Warn},
+    {"err", spotng::logging::Level::Err},
+    {"critical", spotng::logging::Level::Critical}};
+std::unordered_map<std::string, spotng::logging::Target> const kLogTargetMap = {
+    {"console", spotng::logging::Target::Console},
+    {"file", spotng::logging::Target::File},
+    {"rotate_file", spotng::logging::Target::RotateFile}};
 }  // namespace
 
 class QuadDriveImpl {
  public:
   bool Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf);
 
-  // SdQuadX
-  sdquadx::RobotCtrl::SharedPtr robot_ctrl_;
-  sdquadx::drive::DriveCtrl::SharedPtr drive_ctrl_;
-  sdquadx::drive::Twist drive_twist_;
-  sdquadx::drive::Pose drive_pose_;
+  // Spotng
+  spotng::RobotCtrl::SharedPtr robot_ctrl_;
+  spotng::drive::DriveCtrl::SharedPtr drive_ctrl_;
+  spotng::drive::Twist drive_twist_;
+  spotng::drive::Pose drive_pose_;
 
   std::shared_ptr<LegImpl> leg_itf_;
   std::shared_ptr<ImuImpl> imu_itf_;
@@ -137,14 +137,14 @@ class QuadDriveImpl {
   rcl_interfaces::msg::SetParametersResult OnNodeParmasChanged(std::vector<rclcpp::Parameter> const &params);
 
  private:
-  void LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf);
+  void LoadSpotngOptions(spotng::Options::SharedPtr opts, sdf::ElementPtr sdf);
 };
 
-QuadDrive::QuadDrive() : impl_(std::make_unique<QuadDriveImpl>()) {}
+Drive::Drive() : impl_(std::make_unique<QuadDriveImpl>()) {}
 
-QuadDrive::~QuadDrive() {}
+Drive::~Drive() {}
 
-void QuadDrive::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) { impl_->Init(model, sdf); }
+void Drive::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) { impl_->Init(model, sdf); }
 
 bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   model_ = model;
@@ -170,9 +170,9 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   leg_itf_ = std::make_shared<LegImpl>(model);
 
   // Options
-  auto opts = std::make_shared<sdquadx::Options>();
-  LoadSdquadxOptions(opts, sdf->GetElement("sdquadx"));
-  sdquadx::RobotCtrl::Build(robot_ctrl_, opts, leg_itf_, imu_itf_);
+  auto opts = std::make_shared<spotng::Options>();
+  LoadSpotngOptions(opts, sdf->GetElement("spotng"));
+  spotng::RobotCtrl::Build(robot_ctrl_, opts, leg_itf_, imu_itf_);
 
   // Drive Ctrl
   drive_ctrl_ = robot_ctrl_->GetDriveCtrl();
@@ -210,7 +210,7 @@ bool QuadDriveImpl::Init(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
   return true;
 }
 
-void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::ElementPtr sdf) {
+void QuadDriveImpl::LoadSpotngOptions(spotng::Options::SharedPtr opts, sdf::ElementPtr sdf) {
   std::vector<double> v;
 
   // options
@@ -219,7 +219,7 @@ void QuadDriveImpl::LoadSdquadxOptions(sdquadx::Options::SharedPtr opts, sdf::El
   auto log = sdf->GetElement("log");
   opts->log_level = kLogLevelMap.at(log->Get<std::string>("level", "warn").first);
   opts->log_target = kLogTargetMap.at(log->Get<std::string>("target", "console").first);
-  std::strncpy(opts->log_filename, log->Get<std::string>("filename", "log/sdquadx.log").first.c_str(),
+  std::strncpy(opts->log_filename, log->Get<std::string>("filename", "log/spotng.log").first.c_str(),
                sizeof(opts->log_filename) - 1);
 
   // model options
@@ -345,7 +345,7 @@ void QuadDriveImpl::OnCmdVel(geometry_msgs::msg::Twist::ConstSharedPtr const &ms
 void QuadDriveImpl::OnCmdPose(geometry_msgs::msg::Pose::ConstSharedPtr const &msg) {
   drive_pose_.height = msg->position.z;
   // q: [w, x, y, z]
-  sdquadx::SdVector4f q = {msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
+  spotng::SdVector4f q = {msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
   double as = std::min(-2. * (q[1] * q[3] - q[0] * q[2]), .99999);
 
   drive_pose_.yaw =
@@ -416,11 +416,11 @@ rcl_interfaces::msg::SetParametersResult QuadDriveImpl::OnNodeParmasChanged(
   for (const auto &param : params) {
     auto name = param.get_name();
     if (name == "mode" && param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER)
-      drive_ctrl_->UpdateMode(static_cast<sdquadx::drive::Mode>(param.as_int()));
+      drive_ctrl_->UpdateMode(static_cast<spotng::drive::Mode>(param.as_int()));
     else if (name == "state" && param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER)
-      drive_ctrl_->UpdateState(static_cast<sdquadx::drive::State>(param.as_int()));
+      drive_ctrl_->UpdateState(static_cast<spotng::drive::State>(param.as_int()));
     else if (name == "gait" && param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER)
-      drive_ctrl_->UpdateGait(static_cast<sdquadx::drive::Gait>(param.as_int()));
+      drive_ctrl_->UpdateGait(static_cast<spotng::drive::Gait>(param.as_int()));
     else if (name == "step_height" && param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
       drive_ctrl_->UpdateStepHeight(param.as_double());
   }
@@ -428,6 +428,6 @@ rcl_interfaces::msg::SetParametersResult QuadDriveImpl::OnNodeParmasChanged(
   return result;
 }
 
-GZ_REGISTER_MODEL_PLUGIN(QuadDrive)
+GZ_REGISTER_MODEL_PLUGIN(Drive)
 
-}  // namespace sdnova
+}  // namespace openspot

@@ -10,8 +10,8 @@ import launch_ros
 
 def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
-    pkg_this = get_package_share_directory('sdnova_simulation')
-    model_path = os.path.join(pkg_this, 'urdf/sdnova.urdf')
+    pkg_this = get_package_share_directory('openspot_sim')
+    model_path = os.path.join(pkg_this, 'urdf/openspot.urdf')
     posx = LaunchConfiguration('posx')
     posy = LaunchConfiguration('posy')
 
@@ -23,7 +23,7 @@ def generate_launch_description():
     spawn_entity = launch_ros.actions.Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-entity', 'sdnova', '-topic',
+        arguments=['-entity', 'openspot', '-topic',
                    'robot_description', '-x', posx, '-y', posy, '-z', '0.7'],
         output='screen'
     )

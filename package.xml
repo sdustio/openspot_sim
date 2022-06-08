@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sdnova_simulation</name>
-  <version>0.0.0</version>
-  <description>SdNova Simulation</description>
+  <name>openspot_sim</name>
+  <version>1.0.0</version>
+  <description>openspot Simulation</description>
   <maintainer email="yandy.ding@gmail.com">yandy</maintainer>
-  <license>NO</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

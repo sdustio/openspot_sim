@@ -1,6 +1,6 @@
-#include "sdnova_simulation/itf.hpp"
+#include "openspot/itf.hpp"
 
-namespace sdnova {
+namespace openspot {
 
 namespace consts {
 std::array<std::string const, 12> const kJointNames = {
@@ -10,7 +10,7 @@ std::array<double const, 12> const kJointPositions = {-0.785398, 1.40115, -2.953
                                                       -0.785398, 1.40115, -2.953097, 0.785398, 1.40115, -2.953097};
 }  // namespace consts
 
-bool ImuImpl::ReadTo(sdquadx::sensor::ImuData &data) const {
+bool ImuImpl::ReadTo(spotng::sensor::ImuData &data) const {
   data = imudata_;
   return true;
 }
@@ -30,12 +30,12 @@ LegImpl::LegImpl(gazebo::physics::ModelPtr model) {
   }
 }
 
-bool LegImpl::ReadTo(sdquadx::sensor::LegDatas &data) const {
+bool LegImpl::ReadTo(spotng::sensor::LegDatas &data) const {
   data = legdatas_;
   return true;
 }
 
-bool LegImpl::WriteFrom(sdquadx::interface::LegCmds const &cmds) {
+bool LegImpl::WriteFrom(spotng::interface::LegCmds const &cmds) {
   legcmds_ = cmds;
   return true;
 }
@@ -59,4 +59,4 @@ bool LegImpl::RunOnce(gazebo::common::UpdateInfo const &info) {
   return true;
 }
 
-}  // namespace sdnova
+}  // namespace openspot

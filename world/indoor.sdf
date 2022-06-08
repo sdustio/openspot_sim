@@ -9,10 +9,10 @@
     <include>
       <uri>model://ground_plane</uri>
     </include>
-    <model name="sdnova_classic">
+    <model name="openspot_classic">
       <static>1</static>
       <include>
-        <uri>model://sdnova_classic</uri>
+        <uri>model://openspot_classic</uri>
       </include>
     </model>
     <gui fullscreen='0'>

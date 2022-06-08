@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="sdnova" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="openspot" xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:property name="body_length" value="0.58"/>
   <xacro:property name="body_width" value="0.132"/>
   <xacro:property name="body_height" value="0.099"/>
@@ -293,12 +293,12 @@
   </gazebo>
 
   <gazebo>
-    <plugin name='sdnova_drive' filename='libsdnova_simulation.so'>
+    <plugin name='openspot_drive' filename='libopenspot_sim.so'>
       <publish_odom>true</publish_odom>
       <publish_odom_tf>true</publish_odom_tf>
       <odometry_frame>odom</odometry_frame>
       <robot_base_frame>base_footprint</robot_base_frame>
-      <sdquadx>
+      <spotng>
         <log>
           <level>info</level>
         </log>
@@ -366,7 +366,7 @@
           <max_trot_lvel_y>0.4</max_trot_lvel_y>
           <max_trot_avel_z>0.8</max_trot_avel_z>
         </ctrl>
-      </sdquadx>
+      </spotng>
     </plugin>
   </gazebo>
 
