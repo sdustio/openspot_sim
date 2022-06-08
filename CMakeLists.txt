@@ -30,7 +30,7 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
-find_package(sdquadx REQUIRED)
+find_package(spotng REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/drive.cpp
@@ -40,7 +40,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(${PROJECT_NAME} sdquadx::sdquadx)
+target_link_libraries(${PROJECT_NAME} spotng::spotng)
 ament_target_dependencies(${PROJECT_NAME}
   "gazebo_dev"
   "gazebo_ros"
