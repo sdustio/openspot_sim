@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG GH_REF
 
 RUN set -eux; \
-    curl -LsSf -o spotng.deb https://raw.githubusercontent.com/sdustio/openspot_sim/main/dockerfiles/spotng.deb; \
+    curl -LsSf -o spotng.deb https://raw.githubusercontent.com/sdustio/openspot_node/main/dockerfiles/spotng.deb; \
     dpkg -i spotng.deb; rm spotng.deb
 
 RUN set -ex; \
