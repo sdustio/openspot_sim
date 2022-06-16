@@ -18,6 +18,5 @@
             "settings": {}
         }
     },
-    "overrideCommand": false,
     "remoteUser": "vscode"
 }
