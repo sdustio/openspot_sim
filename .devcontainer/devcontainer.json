@@ -15,7 +15,10 @@
                 "Gruntfuggly.todo-tree",
                 "ms-vscode.cpptools-extension-pack"
             ],
-            "settings": {}
+            "settings": {
+                "cmake.configureOnEdit": false,
+                "cmake.configureOnOpen": false
+            }
         }
     },
     "remoteUser": "vscode"
