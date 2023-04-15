@@ -1,95 +1,35 @@
 cmake_minimum_required(VERSION 3.5)
 project(openspot_sim VERSION 1.0.0)
 
-# Default to C99
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif()
-
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
-find_package(gazebo_dev REQUIRED)
-find_package(gazebo_ros REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-
-find_package(nav_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-
 find_package(spotng REQUIRED)
+
+# find ignition
+set(IGN_GAZEBO_VER 6)
+set(IGN_PLUGIN_VER 1)
+find_package(ignition-cmake2 REQUIRED)
+find_package(ignition-gazebo${IGN_GAZEBO_VER} REQUIRED)
+find_package(ignition-plugin${IGN_PLUGIN_VER} REQUIRED COMPONENTS register)
 
 add_library(${PROJECT_NAME} SHARED
   src/drive.cpp
   src/itf.cpp
 )
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  INSTALL_RPATH_USE_LINK_PATH ON
+  CXX_STANDARD 17
+)
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(${PROJECT_NAME} spotng::spotng)
-ament_target_dependencies(${PROJECT_NAME}
-  "gazebo_dev"
-  "gazebo_ros"
-  "rclcpp"
-  "tf2"
-  "tf2_ros"
-  "geometry_msgs"
-  "nav_msgs"
-  "sensor_msgs"
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+   spotng::spotng
+   ignition-gazebo${IGN_GAZEBO_VER}::ignition-gazebo${IGN_GAZEBO_VER}
+   ignition-plugin${IGN_PLUGIN_VER}::ignition-plugin${IGN_PLUGIN_VER}
 )
-set_target_properties(${PROJECT_NAME} PROPERTIES
-  INSTALL_RPATH_USE_LINK_PATH ON
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
-ament_export_include_directories(
-  include
-)
-ament_export_targets(
-  export_${PROJECT_NAME}
-)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(
-  DIRECTORY launch models urdf world
-  DESTINATION share/${PROJECT_NAME}
-)
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
-ament_package()

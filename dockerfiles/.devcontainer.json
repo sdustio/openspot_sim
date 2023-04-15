@@ -1,6 +1,0 @@
-{
-    "name": "openspot-sim",
-    "build": {
-        "dockerfile": "devel.Dockerfile"
-    }
-}
