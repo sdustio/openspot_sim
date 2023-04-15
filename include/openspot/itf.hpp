@@ -2,17 +2,17 @@
 
 #include <array>
 
-#include "gazebo/physics/Joint.hh"
-#include "gazebo/physics/Model.hh"
 #include "spotng/interface.h"
 #include "spotng/sensor.h"
-#include "sensor_msgs/msg/imu.hpp"
+
+#include <ignition/msgs/imu.pb.h>
+#include <ignition/gazebo/Model.hh>
 
 namespace openspot {
 class ImuImpl : public spotng::interface::Imu {
  public:
   bool ReadTo(spotng::sensor::ImuData &data) const override;
-  bool OnMsg(sensor_msgs::msg::Imu::ConstSharedPtr const &msg);
+  void OnMsg(ignition::msgs::IMU const &msg);
 
  private:
   spotng::sensor::ImuData imudata_;
@@ -20,13 +20,13 @@ class ImuImpl : public spotng::interface::Imu {
 
 class LegImpl : public spotng::interface::Leg {
  public:
-  LegImpl(gazebo::physics::ModelPtr model);
+  LegImpl(ignition::gazebo::EntityComponentManager const &ecm, ignition::gazebo::Model &model);
   bool ReadTo(spotng::sensor::LegDatas &data) const override;
   bool WriteFrom(spotng::interface::LegCmds const &cmds) override;
-  bool RunOnce(gazebo::common::UpdateInfo const &info);
+  bool RunOnce(ignition::gazebo::EntityComponentManager &ecm);
 
  private:
-  std::array<gazebo::physics::JointPtr, 12> joints_;
+  std::array<ignition::gazebo::Entity, 12> joints_;
   spotng::sensor::LegDatas legdatas_;
   spotng::interface::LegCmds legcmds_;
 };
